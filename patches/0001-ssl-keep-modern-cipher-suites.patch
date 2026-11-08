@@ -1,0 +1,47 @@
+--- a/nss/lib/ssl/ssl3con.c	2026-11-08 16:23:56.112400788 +0100
++++ b/nss/lib/ssl/ssl3con.c	2026-11-08 16:23:56.129525209 +0100
+@@ -12951,6 +12951,34 @@
+ }
+ 
+ /* record the user preference for this suite */
++/* N900/MicroB patch: the cipher suites of TLS 1.2 that an old application (the Gecko 1.9.2 of MicroB) does not know. Its PSM layer
++ * first switches off every suite of the library and then enables only its own compile-time list (CBC with SHA-1), so without this
++ * the AES-GCM, ChaCha20 and SHA-2 suites would stay off and sites that dropped the old suites could not be reached even with TLS 1.2. */
++static PRBool
++ssl3_IsKeptModernSuite(ssl3CipherSuite which)
++{
++    switch (which) {
++        case TLS_RSA_WITH_AES_128_CBC_SHA256:
++        case TLS_RSA_WITH_AES_256_CBC_SHA256:
++        case TLS_RSA_WITH_AES_128_GCM_SHA256:
++        case TLS_DHE_RSA_WITH_AES_128_GCM_SHA256:
++        case TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
++        case TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
++        case TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
++        case TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384:
++        case TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
++        case TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
++        case TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
++        case TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
++        case TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
++        case TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
++        case TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
++            return PR_TRUE;
++        default:
++            return PR_FALSE;
++    }
++}
++
+ SECStatus
+ ssl3_CipherPrefSetDefault(ssl3CipherSuite which, PRBool enabled)
+ {
+@@ -12960,6 +12988,9 @@
+     if (suite == NULL) {
+         return SECFailure; /* err code was set by ssl_LookupCipherSuiteCfg */
+     }
++    if (!enabled && ssl3_IsKeptModernSuite(which)) {
++        return SECSuccess; /* N900/MicroB patch: ignore "off" for the modern suites (see above) */
++    }
+     suite->enabled = enabled;
+     return SECSuccess;
+ }

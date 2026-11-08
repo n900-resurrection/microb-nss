@@ -1,0 +1,14 @@
+--- a/nss/lib/ssl/sslsock.c	2026-11-08 16:23:56.112615882 +0100
++++ b/nss/lib/ssl/sslsock.c	2026-11-08 16:23:56.131695758 +0100
+@@ -549,6 +549,11 @@
+ ssl_EnableSSL3(SSLVersionRange *vrange, PRBool on)
+ {
+     if (on) {
++        /* N900/MicroB patch: SSL 3.0 can never be switched on (POODLE). The Gecko 1.9.2 of MicroB enables it by default and
++         * falls back to it for servers that are "TLS intolerant"; nearly every server has dropped it anyway. */
++        return;
++    }
++    if (on) {
+         /* don't turn it on if ssl3 disallowed by by policy */
+         if (!ssl_VersionIsSupportedByPolicy(ssl_variant_stream,
+                                             SSL_LIBRARY_VERSION_3_0)) {
