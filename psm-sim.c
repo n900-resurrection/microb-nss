@@ -75,13 +75,13 @@ int main(int argc, char **argv)
         PR_StringToNetAddr(argv[3], &addr);
         addr.inet.port = PR_htons((PRUint16)atoi(argv[2]));
     } else {
-        PRAddrInfo *ai = PR_GetAddrInfoByName(argv[1], PR_AF_INET, 0);
-        void *iter = NULL;
-        if (!ai || PR_EnumerateAddrInfo(iter, ai, (PRUint16)atoi(argv[2]), &addr) == NULL) {
+        char buf[PR_NETDB_BUF_SIZE];
+        PRHostEnt he;
+        if (PR_GetHostByName(argv[1], buf, sizeof buf, &he) != PR_SUCCESS ||
+            PR_EnumerateHostEnt(0, &he, (PRUint16)atoi(argv[2]), &addr) <= 0) {
             fprintf(stderr, "cannot resolve %s\n", argv[1]);
             return 1;
         }
-        PR_FreeAddrInfo(ai);
     }
     tcp = PR_OpenTCPSocket(PR_NetAddrFamily(&addr));
     if (!tcp || PR_Connect(tcp, &addr, PR_SecondsToInterval(15)) != PR_SUCCESS) {

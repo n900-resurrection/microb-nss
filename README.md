@@ -12,7 +12,7 @@ range is TLS 1.0 to 1.2. All 871 symbols that the engine imports from NSS/NSPR, 
 2. `0002-ssl-no-ssl3.patch`: SSL 3.0 cannot be switched on (POODLE). MicroB enables it and uses it as a fallback for "TLS intolerant" servers.
 3. `0003-sqlite-private-name.patch`: the SQLite of NSS becomes `libnsssqlite3.so`, because MicroB has its own `libsqlite3.so` in the same directory.
 
-## Build and package (not part of `make debs` and `make test`: `MANUAL` in the Makefile)
+## Build and package
 ```
 make -C apps/microb-nss build           # NSPR + NSS cross build in the Workshop, about 2 minutes (nothing is installed)
 make debs APP=microb-nss                # the .deb; INSTALL=1 also installs it on the phone
@@ -21,9 +21,15 @@ make -C apps/microb-nss test            # on the phone, the package must be inst
 `build.sh` runs without `-j` (the recursive NSS make breaks with a job server), uses the sysroot zlib and keeps the legacy dbm databases (`cert8.db`) that MicroB uses.
 
 ## Installation on the phone
-The package links its libraries into `/usr/lib/microb-engine` and moves the stock ones to `/opt/microb-nss/orig` with `dpkg-divert`; removing the package puts them back.
+The package links its libraries into `/usr/lib/microb-engine` and moves the stock ones to `/usr/lib/microb-engine-orig` with `dpkg-divert` (the same file system: the old `dpkg-divert` of the phone only renames and has no `--listpackage`); removing the package puts them back.
 Nothing is restarted: `/etc/init.d/tablet-browser-daemon.init restart` (or a reboot) makes the browser daemon load the new libraries. The `postinst` first checks that
 the new libraries load at all (`psm-sim` without arguments prints its usage and exits with 2) and replaces nothing otherwise.
+
+## Result
+The stock MicroB with these libraries opens `https://www.seznam.cz/` (TLS 1.2, AES-GCM, verified certificate; before, "SSL error"). The page is rendered by the old Gecko 1.9.2 without
+the modern CSS and scripts, but it is readable. Google answers "your browser is not supported" (a User-Agent check, not TLS); Facebook asks for a newer browser.
+
+![MicroB on the N900 showing https://www.seznam.cz/](docs/microb-seznam-tls12.png)
 
 ## psm-sim
 `/opt/microb-nss/bin/psm-sim host port [ip]` sets NSS up the way PSM does (SSL 3 and TLS on, all suites off, then the old CBC list on) and prints the negotiated protocol and suite
