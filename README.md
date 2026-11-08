@@ -31,6 +31,11 @@ the modern CSS and scripts, but it is readable. Google answers "your browser is 
 
 ![MicroB on the N900 showing https://www.seznam.cz/](docs/microb-seznam-tls12.png)
 
+A modern, styled page works too: the timetable search `https://idos.cz/` (IDOS, Czech public transport) with its form, colours and layout. It takes about 20 seconds to load
+(600 MHz CPU, TLS 1.2 handshakes with unoptimised C crypto for every connection, Gecko 1.9.2 with a lot of script), but it loads.
+
+![MicroB on the N900 showing https://idos.cz/](docs/microb-idos-tls12.png)
+
 ## psm-sim
 `/opt/microb-nss/bin/psm-sim host port [ip]` sets NSS up the way PSM does (SSL 3 and TLS on, all suites off, then the old CBC list on) and prints the negotiated protocol and suite
 (no certificate check). Run it with `LD_LIBRARY_PATH=/opt/microb-nss/lib`. Result under qemu-user with the patches, 2026-11-08: tls-v1-2.badssl.com TLS 1.2, www.google.com,
